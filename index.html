@@ -270,10 +270,10 @@
       <h2>수요·공급 곡선 이동 게임</h2>
       <p class="sub">사례를 읽고, 곡선의 이동과 가격 변화를 추리하라!</p>
       <div class="rules">
-        <div><span class="tag">1단계</span><b>변동 요인</b> 찾기! <span class="pt">+10</span></div>
-        <div><span class="tag">2단계</span><b>곡선 이동</b> 맞히기! <span class="pt">+10</span></div>
-        <div><span class="tag">3단계</span><b>가격·거래량</b> 예측하기! <span class="pt">+10</span></div>
-        <div><span class="tag">보너스</span>세 단계 모두 정답! <span class="pt">+5</span></div>
+        <div><span class="tag">1단계</span><b>변동 요인</b> 찾기! <span class="pt">+30</span></div>
+        <div><span class="tag">2단계</span><b>곡선 이동</b> 맞히기! <span class="pt">+30</span></div>
+        <div><span class="tag">3단계</span><b>가격·거래량</b> 예측하기! <span class="pt">+30</span></div>
+        <div><span class="tag">보너스</span>세 단계 모두 정답! <span class="pt">+10</span></div>
         <div><span class="tag warn">목숨</span><span class="heart">❤</span> 7개 — 틀리거나 시간 초과하면 -1, 다 잃으면 <b>게임 오버!</b></div>
         <div><span class="tag heal">회복</span>2문제 연속 완벽하면 목숨 <span class="heart">+1 ❤</span></div>
       </div>
@@ -285,7 +285,7 @@
           <button class="sp-btn active" data-sec="20" onclick="pickSpeed(this,20)">보통<small>20초 · ×1.0</small></button>
           <button class="sp-btn" data-sec="12" onclick="pickSpeed(this,12)">도전<small>12초 · ×1.2</small></button>
         </div>
-        <div class="sp-info" id="sp-info">선택: <b>보통</b> · 점수 배율 <b>×1.0</b> · 만점 <b>525점</b></div>
+        <div class="sp-info" id="sp-info">선택: <b>보통</b> · 점수 배율 <b>×1.0</b> · 만점 <b>1,500점</b></div>
       </div>
       <div class="mode-btns">
         <button class="mode-btn basic" onclick="startGame('basic')">기본 모드<small>곡선 이름 보임<br>15문제</small></button>
@@ -610,7 +610,7 @@ function rankOf(pct){
   return {t, m:base.m};
 }
 function mult(){ return MULT[baseSec] || 1; }
-const BASE_MAX = 525;              // 배율 1.0 기준 만점 (15문제 × 35점)
+const BASE_MAX = 1500;             // 배율 1.0 기준 만점 (15문제 × 100점)
 function maxScore(){ return Math.round(BASE_MAX * mult()); }
 /* 점수는 배율 적용 전 원점수(raw)로 누적하고, 표시할 때 배율을 적용한다.
    이렇게 하면 단계마다 반올림 오차가 쌓이지 않아 만점이 정확히 떨어진다. */
@@ -870,7 +870,7 @@ function answerF(key, ck, btn){
   btn.classList.add(fok?'correct':'wrong');
   if(!fok) revealCorrect();
   let lost=false; const before=score;
-  if(fok){ score += 10; SFX.correct(); } else { streak=0; lost=loseLife(); SFX.wrong(); }
+  if(fok){ score += 30; SFX.correct(); } else { streak=0; lost=loseLife(); SFX.wrong(); }
   const shown=gainShown(before, score);
   hud();
   const fb=document.getElementById('feedback');
@@ -928,7 +928,7 @@ function answerQ1(key, btn){
   const isTrap = cur.curve==='N';
   let gained=0, lost=false; const before=score;
   if(ok){
-    gained = 10;
+    gained = 30;
     score+=gained;
     isTrap ? SFX.perfect() : SFX.correct();
   }else{ streak=0; lost=loseLife(); SFX.wrong(); }
@@ -1088,7 +1088,7 @@ function answerQ2(key, btn){
   if(!ok) revealCorrect();
   let gained=0;
   let lost=false; const before=score;
-  if(ok){ gained = 10 + (fok&&sok?5:0); score+=gained; (fok&&sok)?SFX.perfect():SFX.correct(); }
+  if(ok){ gained = 30 + (fok&&sok?10:0); score+=gained; (fok&&sok)?SFX.perfect():SFX.correct(); }
   else { lost=loseLife(); SFX.wrong(); }
   streak = (ok&&fok&&sok) ? streak+1 : 0;
   let healed=false;
@@ -1099,7 +1099,7 @@ function answerQ2(key, btn){
   let head;
   if(ok){
     const extras=[];
-    if(fok&&sok) extras.push('세 단계 모두 정답 +5');
+    if(fok&&sok) extras.push('세 단계 모두 정답 +10');
     head = `✅ 정답! +${gainShown(before,score)}점${extras.length?` (${extras.join(', ')})`:''}`;
   }else head='❌ 아쉬워요!' + (lost?' 목숨 -1':'');
   const healMsg = healed ? `<div style="color:var(--heart);font-family:'Do Hyeon';margin-top:6px">❤ ${streak}문제 연속 완벽! 목숨을 하나 되찾았어요 (${'❤'.repeat(lives)})</div>` : '';
