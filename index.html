@@ -820,6 +820,9 @@ function resetGraph(){
   void els[0].offsetWidth; // reflow
   els.forEach(el=>{ el.style.transition=''; });
   ['ghost','e1','e1t','guides','trap-arrows'].forEach(id=>document.getElementById(id).setAttribute('opacity','0'));
+  const e1r=document.getElementById('e1');
+  e1r.style.transition='none'; e1r.setAttribute('cx',200); e1r.setAttribute('cy',160);
+  void e1r.offsetWidth; e1r.style.transition='';
   document.getElementById('badges').classList.remove('show');
 }
 
@@ -1132,18 +1135,14 @@ function showPointMove(ck){
   set('g-p0t',{x:50,y:164}); set('g-p1t',{x:50,y:y+4});
   set('g-q0t',{x:200,y:302}); set('g-q1t',{x:x,y:302});
   document.getElementById('guides').setAttribute('opacity','1');
-  // 점이 곡선을 따라 미끄러지는 애니메이션
+  // 곡선 위 점의 이동은 '새로운 균형점'이 아니므로 E₁ 표시는 하지 않는다.
+  // 대신 도착 지점에 작은 점만 찍어 새 수요량·공급량을 가리킨다.
   const e1=document.getElementById('e1'), e1t=document.getElementById('e1t');
+  e1t.setAttribute('opacity','0');
   e1.setAttribute('cx',200); e1.setAttribute('cy',160);
-  e1t.setAttribute('x',210); e1t.setAttribute('y',152); e1t.textContent='E₁';
-  e1.setAttribute('opacity','1'); e1t.setAttribute('opacity','1');
+  e1.setAttribute('opacity','1');
   e1.style.transition='cx 1s ease-in-out, cy 1s ease-in-out';
-  e1t.style.transition='x 1s ease-in-out, y 1s ease-in-out';
-  setTimeout(()=>{
-    e1.setAttribute('cx',x); e1.setAttribute('cy',y);
-    e1t.setAttribute('x',x+10); e1t.setAttribute('y',y-8);
-    SFX.shift();
-  },120);
+  setTimeout(()=>{ e1.setAttribute('cx',x); e1.setAttribute('cy',y); SFX.shift(); },120);
   // 배지: 가격과 수요량/공급량 변화
   const bp=document.getElementById('badge-p'), bq=document.getElementById('badge-q');
   const priceUp = (way==='LU'||way==='RU');
