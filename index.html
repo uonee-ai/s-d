@@ -61,8 +61,8 @@
   }
   #hud-lives.low .hp:not(.gone){animation:heartbeat .7s infinite;}
   @keyframes heartbeat{0%,100%{transform:scale(1)}50%{transform:scale(1.25)}}
-  #hud-lives-wrap{display:none;}
-  #hud-lives-wrap.show{display:inline;}
+  .board .stats .ingame{display:none;}
+  .board .stats .ingame.show{display:inline;}
 
   /* ── 제한 시간 바 ── */
   .timer-wrap{
@@ -247,10 +247,10 @@
   <div class="board">
     <h1>📈 시장 가격 탐정</h1>
     <div class="stats">
-      <span>문제<b id="hud-round">-</b></span>
-      <span>점수<b id="hud-score">0</b></span>
-      <span>연속<b id="hud-streak">0</b></span>
-      <span id="hud-lives-wrap"><b id="hud-lives"></b></span>
+      <span class="ingame">문제<b id="hud-round">-</b></span>
+      <span class="ingame">점수<b id="hud-score">0</b></span>
+      <span class="ingame">연속<b id="hud-streak">0</b></span>
+      <span class="ingame" id="hud-lives-wrap"><b id="hud-lives"></b></span>
       <button id="snd-btn" onclick="toggleSound()" title="소리 끄기">🔊</button>
     </div>
   </div>
@@ -775,7 +775,7 @@ function startGame(mode){
   }
   deck = pool; window.MODE = mode;
   round=0; score=0; streak=0; log=[]; lives=MAXLIVES; dead=false; lostThisRound=false; flawless=true;
-  document.getElementById('hud-lives-wrap').classList.add('show');
+  document.querySelectorAll('.board .stats .ingame').forEach(el=>el.classList.add('show'));
   SFX.start();
   document.getElementById('scr-start').classList.remove('active');
   document.getElementById('scr-game').classList.add('active');
