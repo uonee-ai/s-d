@@ -180,6 +180,9 @@
   .opt.wrong{border-color:var(--bad); background:rgba(255,107,107,.13);}
   .opt .arrow{font-family:'Do Hyeon'; margin-right:6px;}
   .opt .arrow.d{color:var(--demand);} .opt .arrow.s{color:var(--supply);}
+  .opt .arrowno{display:inline-block; width:22px; height:22px; line-height:22px; text-align:center;
+    font-family:'Do Hyeon'; font-size:.95rem; margin-right:6px;
+    background:var(--gold); color:#1a1408; border-radius:50%;}
   .bigab{font-family:'Do Hyeon'; font-size:1.35em; font-weight:700; letter-spacing:.02em;}
   .opt .optno{display:inline-block; min-width:18px; height:18px; line-height:18px; text-align:center;
     background:var(--line); color:var(--dim); border-radius:5px; font-size:.75rem;
@@ -342,6 +345,13 @@
           <text id="e0t" x="210" y="152" fill="#FFD166" font-size="13" font-family="Do Hyeon">E₀</text>
           <circle id="e1" class="fade" opacity="0" r="6" fill="#FFD166" stroke="#0E1420" stroke-width="1.5"/>
           <text id="e1t" class="fade" opacity="0" fill="#FFD166" font-size="13" font-family="Do Hyeon">E₁</text>
+          <!-- 함정 문제: 균형점에서 뻗어 나가는 네 방향 화살표 -->
+          <g id="trap-arrows" class="fade" opacity="0">
+            <g id="arw0"><line stroke-width="4" stroke-linecap="round"/><polygon/><circle r="11"/><text font-size="14" font-family="Do Hyeon" text-anchor="middle"></text></g>
+            <g id="arw1"><line stroke-width="4" stroke-linecap="round"/><polygon/><circle r="11"/><text font-size="14" font-family="Do Hyeon" text-anchor="middle"></text></g>
+            <g id="arw2"><line stroke-width="4" stroke-linecap="round"/><polygon/><circle r="11"/><text font-size="14" font-family="Do Hyeon" text-anchor="middle"></text></g>
+            <g id="arw3"><line stroke-width="4" stroke-linecap="round"/><polygon/><circle r="11"/><text font-size="14" font-family="Do Hyeon" text-anchor="middle"></text></g>
+          </g>
         </svg>
         <div class="result-badges" id="badges">
           <span class="badge" id="badge-p"></span>
@@ -665,9 +675,13 @@ function timeUp(){
   logMark(false);
   const fb=document.getElementById('feedback');
   fb.className='feedback show miss';
-  fb.innerHTML=`<div class="fb-title timeup-msg">⏰ 시간 초과!${lostTU?' 목숨 -1':''}</div>${phase===3?Q2WHY[q2Key()]:cur.why}`;
+  const isTrap = cur.curve==='N';
+  let why;
+  if(phase===3) why = isTrap ? TRAPWHY[q2Key()] : Q2WHY[q2Key()];
+  else why = cur.why;
+  fb.innerHTML=`<div class="fb-title timeup-msg">⏰ 시간 초과!${lostTU?' 목숨 -1':''}</div>${why||''}`;
   if(phase===2) animateShift();
-  if(phase===3) showResultOnGraph(q2Key());
+  if(phase===3){ isTrap ? showPointMove(q2Key()) : showResultOnGraph(q2Key()); }
   showNext();
 }
 function logMark(ok){
@@ -805,7 +819,7 @@ function resetGraph(){
   els.forEach(el=>{ el.style.transition='none'; el.style.transform='translateX(0)'; });
   void els[0].offsetWidth; // reflow
   els.forEach(el=>{ el.style.transition=''; });
-  ['ghost','e1','e1t','guides'].forEach(id=>document.getElementById(id).setAttribute('opacity','0'));
+  ['ghost','e1','e1t','guides','trap-arrows'].forEach(id=>document.getElementById(id).setAttribute('opacity','0'));
   document.getElementById('badges').classList.remove('show');
 }
 
@@ -975,12 +989,13 @@ function renderQ2(){
   document.getElementById('qtitle').textContent = isTrap
     ? '3단계 · 곡선 위의 점은 어디로 움직일까?'
     : '3단계 · 새로운 균형에서 가격과 거래량은?';
-  const opts = isTrap ? [
-    {key:'D-RD', html:'<b style="color:var(--demand)">수요 곡선</b>을 따라 <b>오른쪽 아래</b>로 (가격 하락 → 수요량 증가)'},
-    {key:'D-LU', html:'<b style="color:var(--demand)">수요 곡선</b>을 따라 <b>왼쪽 위</b>로 (가격 상승 → 수요량 감소)'},
-    {key:'S-RU', html:'<b style="color:var(--supply)">공급 곡선</b>을 따라 <b>오른쪽 위</b>로 (가격 상승 → 공급량 증가)'},
-    {key:'S-LD', html:'<b style="color:var(--supply)">공급 곡선</b>을 따라 <b>왼쪽 아래</b>로 (가격 하락 → 공급량 감소)'},
-  ] : [
+  let opts;
+  if(isTrap){
+    // 화살표 번호와 방향의 짝을 매 문제 새로 섞는다 → 그래프를 직접 읽어야 풀 수 있다
+    const dirs = shuffle([...TRAP_DIRS]);
+    drawTrapArrows(dirs);
+    opts = dirs.map((d,i)=>({key:d.key, html:`<b class="arrowno">${i+1}</b> 번 화살표 &nbsp;(${DIR_TEXT[d.key]})`}));
+  }else opts = [
     {key:'UU', html:'가격 <b style="color:var(--up)">상승 ▲</b> · 거래량 <b style="color:var(--up)">증가 ▲</b>'},
     {key:'UD', html:'가격 <b style="color:var(--up)">상승 ▲</b> · 거래량 <b style="color:var(--down)">감소 ▼</b>'},
     {key:'DU', html:'가격 <b style="color:var(--down)">하락 ▼</b> · 거래량 <b style="color:var(--up)">증가 ▲</b>'},
@@ -993,7 +1008,7 @@ function renderQ2(){
   // 3단계도 보기 순서를 항상 고정한다 (상승▲증가▲ / 상승▲감소▼ / 하락▼증가▲ / 하락▼감소▼)
   opts.forEach((o,n)=>{
     const b=document.createElement('button'); b.className='opt';
-    b.innerHTML = `<span class="optno">${n+1}</span> ` + o.html;
+    b.innerHTML = isTrap ? o.html : (`<span class="optno">${n+1}</span> ` + o.html);
     b.optKey = o.key;
     b.onclick=()=>answerQ2(o.key,b); box.appendChild(b);
   });
@@ -1008,6 +1023,49 @@ function q2Key(){
   }
   if(cur.curve==='D') return cur.dir==='R' ? 'UU' : 'DD';
   return cur.dir==='R' ? 'DU' : 'UD';
+}
+/* 함정 3단계: 균형점(200,160)에서 각 곡선을 따라 뻗는 네 방향
+   수요선 y=0.75x+10 / 공급선 y=-0.75x+310 위의 점들 */
+const TRAP_DIRS = [
+  {key:'D-RD', curve:'D', x:250, y:197},   // 수요 곡선 따라 오른쪽 아래
+  {key:'D-LU', curve:'D', x:150, y:122},   // 수요 곡선 따라 왼쪽 위
+  {key:'S-RU', curve:'S', x:250, y:122},   // 공급 곡선 따라 오른쪽 위
+  {key:'S-LD', curve:'S', x:150, y:197},   // 공급 곡선 따라 왼쪽 아래
+];
+const ARROW_COL = '#FFD166';   // 곡선 위에서도 잘 보이도록 금색으로 통일
+const DIR_TEXT = {
+  'D-RD':'가격 하락 <b style="color:var(--down)">▼</b> → 수요량 증가 <b style="color:var(--up)">▲</b>',
+  'D-LU':'가격 상승 <b style="color:var(--up)">▲</b> → 수요량 감소 <b style="color:var(--down)">▼</b>',
+  'S-RU':'가격 상승 <b style="color:var(--up)">▲</b> → 공급량 증가 <b style="color:var(--up)">▲</b>',
+  'S-LD':'가격 하락 <b style="color:var(--down)">▼</b> → 공급량 감소 <b style="color:var(--down)">▼</b>',
+};
+function drawTrapArrows(dirs){
+  dirs.forEach((d,i)=>{
+    const g=document.getElementById('arw'+i);
+    const ln=g.querySelector('line'), head=g.querySelector('polygon'),
+          cir=g.querySelector('circle'), tx=g.querySelector('text');
+    const len=Math.hypot(d.x-200, d.y-160);
+    const ux=(d.x-200)/len, uy=(d.y-160)/len;      // 방향 단위벡터
+    const px=-uy, py=ux;                            // 수직 단위벡터
+    const tipX=d.x, tipY=d.y;
+    // 선은 화살촉 바로 앞까지만
+    ln.setAttribute('x1',200); ln.setAttribute('y1',160);
+    ln.setAttribute('x2',tipX-ux*11); ln.setAttribute('y2',tipY-uy*11);
+    ln.setAttribute('stroke',ARROW_COL);
+    // 화살촉 삼각형
+    const bx=tipX-ux*13, by=tipY-uy*13;
+    head.setAttribute('points',
+      `${tipX},${tipY} ${bx+px*6},${by+py*6} ${bx-px*6},${by-py*6}`);
+    head.setAttribute('fill',ARROW_COL);
+    // 번호 원판
+    const cx=tipX+ux*20, cy=tipY+uy*20;
+    cir.setAttribute('cx',cx); cir.setAttribute('cy',cy);
+    cir.setAttribute('fill',ARROW_COL); cir.setAttribute('stroke','#0E1420'); cir.setAttribute('stroke-width','1.5');
+    tx.setAttribute('x',cx); tx.setAttribute('y',cy+5);
+    tx.setAttribute('fill','#1a1408'); tx.textContent=String(i+1);
+    g.setAttribute('opacity','1');
+  });
+  document.getElementById('trap-arrows').setAttribute('opacity','1');
 }
 const TRAPWHY = {
   'D-RD':'가격이 내리면 사려는 양이 늘어나요. 곡선이 이동한 게 아니라 <b>수요 곡선 위의 점이 오른쪽 아래로</b> 미끄러진 것! 이것이 「수요량의 변화」입니다.',
@@ -1045,7 +1103,7 @@ function answerQ2(key, btn){
     head = `✅ 정답! +${gainShown(before,score)}점${extras.length?` (${extras.join(', ')})`:''}`;
   }else head='❌ 아쉬워요!' + (lost?' 목숨 -1':'');
   const healMsg = healed ? `<div style="color:var(--heart);font-family:'Do Hyeon';margin-top:6px">❤ ${streak}문제 연속 완벽! 목숨을 하나 되찾았어요 (${'❤'.repeat(lives)})</div>` : '';
-  const why = (cur.curve==='N') ? TRAPWHY[ck] : Q2WHY[ck];
+  let why = (cur.curve==='N') ? TRAPWHY[ck] : Q2WHY[ck];
   fb.innerHTML=`<div class="fb-title">${head}</div>${why}${healMsg}`;
   logMark(ok);
   if(cur.curve==='N') showPointMove(ck); else showResultOnGraph(ck);
@@ -1057,6 +1115,13 @@ function optKeyOf(b){ return b.optKey; }
 /* 함정 문제: 곡선 위에서 점이 미끄러지는 모습을 보여준다 */
 function showPointMove(ck){
   const [curve, way] = ck.split('-');
+  // 정답 화살표만 남기고 나머지는 흐리게
+  const ans = TRAP_DIRS.find(d=>d.key===ck);
+  for(let i=0;i<4;i++){
+    const g=document.getElementById('arw'+i);
+    const tip=g.querySelector('polygon').getAttribute('points').split(' ')[0];
+    g.setAttribute('opacity', tip===`${ans.x},${ans.y}` ? '1' : '0.13');
+  }
   const dx = (way==='RD'||way==='RU') ? 60 : -60;   // 오른쪽이면 +, 왼쪽이면 -
   const x = 200 + dx;
   const y = (curve==='D') ? 0.75*x + 10 : -0.75*x + 310;
